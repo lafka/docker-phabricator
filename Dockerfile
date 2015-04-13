@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y \
 	apache2 \
 	php5 \
 	libapache2-mod-php5 \
+	php5-acpu \
 	php5-mcrypt \
 	php5-mysql \
 	php5-gd \
@@ -34,7 +35,8 @@ RUN apt-get update && apt-get install -y \
 	git \
 	subversion \
 	mercurial \
-	postfix
+	postfix \
+	python-pygments
 
 RUN cd /opt/ && git clone https://github.com/facebook/libphutil.git
 RUN cd /opt/ && git clone https://github.com/facebook/arcanist.git
@@ -50,14 +52,10 @@ RUN echo 'root:docker' | chpasswd
 RUN echo 'admin ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers.d/admin
 RUN chmod 0440 /etc/sudoers.d/admin
 
-RUN mkdir -p /var/log/supervisor
-
-# Supervisor
-ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Enabled mod rewrite for phabricator
-RUN a2enmod rewrite
-RUN sed -i -e"s/^bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/" /etc/mysql/my.cnf
+RUN a2enmod rewrite && a2enmod headers && a2enmod ssl
+#RUN sed -i -e"s/^bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/" /etc/mysql/my.cnf
 RUN sed -i 's/\[mysqld\]/[mysqld]\nsql_mode=STRICT_ALL_TABLES/' /etc/mysql/my.cnf
 ADD ./startup.sh /opt/startup.sh
 RUN chmod +x /opt/startup.sh
@@ -85,7 +83,13 @@ RUN \
 
 RUN mkdir -p '/var/repo/' && chown -R git /var/repo
 
-VOLUME /opt/phabricator/conf/local
-EXPOSE 3306 80 22
+# Fix phabriactor settings
+RUN  sed 's/post_max_size = 8M/post_max_size = 32M/' /etc/php5/apache2/php.ini && \
+	sed -i 's/opcache.validate_timestamps=1/opcache.validate_timestamps=0/' /etc/php5/apache2/php.ini
+# Fix MySQL settings
+RUN sed -i '/\[mysqld\]/a ft_stopword_file=/opt/phabricator/resources/sql/stopwords.txt\nft_min_word_len=3\nft_boolean_syntax=" |-><()~*:\"\"&^"\ninnodb_buffer_pool_size=1600M' /etc/mysql/my.cnf
 
-CMD ["/usr/bin/supervisord"]
+VOLUME /opt/phabricator/conf/local
+EXPOSE 443 80 22
+
+CMD ["/opt/startup.sh"]

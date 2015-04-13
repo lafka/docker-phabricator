@@ -1,4 +1,10 @@
-#/bin/bash
+#!/bin/bash
+
+set -e
+
+service mysql start
+service ssh start
+service apache2 start
 
 if [ ! -f /var/lib/mysql/ibdata1 ]; then
 
@@ -14,14 +20,13 @@ if [ ! -f /var/lib/mysql/ibdata1 ]; then
 fi
 
 cd /opt/
-git clone git://github.com/facebook/libphutil.git
-git clone git://github.com/facebook/arcanist.git
-git clone git://github.com/facebook/phabricator.git
+git clone git://github.com/facebook/libphutil.git|| ( cd libphutil; git pull; )
+git clone git://github.com/facebook/arcanist.git|| ( cd arcanist; git pull; )
+git clone git://github.com/facebook/phabricator.git|| ( cd phabricator; git pull; )
 
-chmod 666 /opt/phabricator/conf/local/local.json
-
-# if container restart, fix mysql rights
-chown -R mysql:mysql /var/lib/docker
+[ -e /opt/phabricator/conf/local/local.json ] && chmod 666 /opt/phabricator/conf/local/local.json
 
 cd /opt/phabricator && ./bin/storage upgrade --force
 cd /opt/phabricator && ./bin/phd restart
+
+exec /bin/bash
