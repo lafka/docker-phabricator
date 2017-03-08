@@ -71,7 +71,8 @@ RUN \
 	useradd -ms /bin/bash git && \
 	passwd -d git && \
 	useradd -s /bin/false phd && \
-	echo "git ALL=(phd) SETENV: NOPASSWD: $(command -v git-upload-pack), $(command -v git-receive-pack), $(command -v hg), $(command -v svnserve)" >> /etc/sudoers && \
+	echo "www-data ALL=(phd) SETENV: NOPASSWD: $(command -v git), /usr/lib/git-core/git-http-backend" >> /etc/sudoers && \
+	echo "git ALL=(phd) SETENV: NOPASSWD: $(command -v git), $(command -v git-upload-pack), $(command -v git-receive-pack), $(command -v hg), $(command -v svnserve)" >> /etc/sudoers && \
 	cp -v /opt/phabricator/resources/sshd/phabricator-ssh-hook.sh /usr/sbin/ && \
 	chown root /usr/sbin/phabricator-ssh-hook.sh && \
 	chmod 755 /usr/sbin/phabricator-ssh-hook.sh && \

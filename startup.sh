@@ -26,6 +26,10 @@ git clone git://github.com/facebook/phabricator.git|| ( cd phabricator; git pull
 
 [ -e /opt/phabricator/conf/local/local.json ] && chmod 666 /opt/phabricator/conf/local/local.json
 
+cd /opt/phabricator && bin/config set diffusion.allow-http-auth true
+cd /opt/phabricator && bin/config set environment.append-paths '["/usr/lib/git-core/"]'
+cd /opt/phabricator && bin/config set phd.user phd
+
 cd /opt/phabricator && ./bin/storage upgrade --force
 cd /opt/phabricator && ./bin/phd restart
 
